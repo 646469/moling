@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0d0e12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="墨灵">
+<title>墨灵 · AI 小说工作台</title>
+<style>
+:root{
+  --bg:#0d0e12;--elev:#15171e;--elev2:#1c1f28;--bd:#2a2e3a;
+  --tx:#e8e5df;--dim:#8f8c86;--faint:#5a5750;
+  --ac:#c9a96a;--acd:#8a7344;--acbg:#2a2418;
+  --danger:#d16b5a;--ok:#6ba368;
+  --tab-h:58px;
+  --serif:"Songti SC","STSong","SimSun",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{font-family:var(--sans);background:var(--bg);color:var(--tx);
+  -webkit-font-smoothing:antialiased;text-size-adjust:100%}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;font-size:15px}
+input,textarea,select{font-family:inherit;background:var(--elev2);border:1px solid var(--bd);
+  color:var(--tx);border-radius:10px;padding:12px 13px;font-size:16px;outline:none;width:100%;
+  -webkit-appearance:none;appearance:none}
+input:focus,textarea:focus,select:focus{border-color:var(--acd)}
+textarea{resize:none;line-height:1.7}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),
+  linear-gradient(135deg,var(--dim) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 50%,calc(100% - 12px) 50%;
+  background-size:6px 6px,6px 6px;background-repeat:no-repeat;padding-right:36px}
+::-webkit-scrollbar{width:0;height:0}
+
+/* ========= 启动页 ========= */
+#land{height:100%;height:100dvh;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;background:radial-gradient(ellipse at 50% 32%,#1a1c24,#0d0e12 72%);
+  padding:0 26px calc(48px + env(safe-area-inset-bottom))}
+.land-title{font-family:var(--serif);font-size:clamp(46px,14vw,58px);letter-spacing:12px;
+  margin-bottom:10px;color:var(--tx)}
+.land-sub{font-size:13px;color:var(--dim);letter-spacing:3px;margin-bottom:52px}
+.land-btn{width:100%;max-width:300px;font-size:17px;letter-spacing:6px;padding:18px 0;
+  border:1px solid var(--acd);border-radius:44px;color:var(--ac);background:var(--acbg);
+  transition:transform .12s,background .15s}
+.land-btn:active{transform:scale(.96);background:var(--ac);color:#151209}
+.land-tip{position:absolute;bottom:calc(26px + env(safe-area-inset-bottom));
+  font-size:11px;color:var(--faint);text-align:center;line-height:1.8;padding:0 30px}
+
+/* ========= 应用外壳 ========= */
+#shell{height:100%;height:100dvh;display:flex;flex-direction:column}
+.hdr{flex-shrink:0;display:flex;align-items:center;gap:10px;
+  padding:calc(10px + env(safe-area-inset-top)) 16px 10px;
+  background:var(--elev);border-bottom:1px solid var(--bd)}
+.hdr .brand{font-family:var(--serif);font-size:19px;letter-spacing:4px;color:var(--ac);flex-shrink:0}
+.hdr .h-title{flex:1;text-align:right;font-size:12.5px;color:var(--dim);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hdr .h-back{font-size:26px;line-height:1;color:var(--dim);padding:0 10px 0 0;flex-shrink:0}
+
+.main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:16px 14px calc(var(--tab-h) + env(safe-area-inset-bottom) + 24px)}
+
+/* ========= 底部标签栏 ========= */
+.tabbar{flex-shrink:0;display:flex;background:var(--elev);border-top:1px solid var(--bd);
+  height:calc(var(--tab-h) + env(safe-area-inset-bottom));
+  padding-bottom:env(safe-area-inset-bottom)}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;color:var(--faint);font-size:10px;letter-spacing:.5px;padding-top:6px;transition:color .15s}
+.tab .ti{font-size:19px;line-height:1}
+.tab.on{color:var(--ac)}
+
+/* 阅读模式隐藏标签栏 */
+#shell.reader .tabbar{display:none}
+#shell.reader .main{padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+
+/* ========= 通用组件 ========= */
+.v-head{margin-bottom:18px}
+.v-title{font-family:var(--serif);font-size:23px;letter-spacing:.5px;line-height:1.35}
+.v-desc{font-size:12.5px;color:var(--dim);margin-top:6px;line-height:1.6}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:12px 16px;border-radius:10px;font-size:14.5px;background:var(--elev2);
+  border:1px solid var(--bd);color:var(--tx);min-height:46px;transition:transform .1s}
+.btn:active{transform:scale(.97)}
+.btn-p{background:var(--ac);border-color:var(--ac);color:#151209;font-weight:600}
+.btn-p:disabled{opacity:.4}
+.btn-b{width:100%}
+.btn-danger{color:var(--danger);border-color:#3a2520}
+.btn-row{display:flex;gap:9px;margin-top:13px}
+.btn-row .btn{flex:1;min-width:0}
+
+.card{background:var(--elev);border:1px solid var(--bd);border-radius:14px;
+  padding:17px 15px;margin-bottom:13px}
+.card-title{font-size:12.5px;color:var(--ac);letter-spacing:.5px;margin-bottom:14px;
+  display:flex;justify-content:space-between;align-items:center;gap:10px}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:15px}
+.stat{background:var(--elev);border:1px solid var(--bd);border-radius:12px;padding:14px 15px}
+.stat-num{font-family:var(--serif);font-size:25px;color:var(--ac);line-height:1.2}
+.stat-label{font-size:11px;color:var(--dim);margin-top:4px}
+
+.field{margin-bottom:13px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:12px;color:var(--dim);margin-bottom:6px}
+
+.char-card{background:var(--elev2);border:1px solid var(--bd);border-radius:11px;
+  padding:13px;margin-bottom:9px}
+.char-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px}
+.char-name{font-family:var(--serif);font-size:16.5px}
+.char-role{font-size:10.5px;padding:3px 10px;border-radius:20px;background:var(--acbg);
+  color:var(--ac);flex-shrink:0}
+.char-role.antagonist{background:#2e1a17;color:var(--danger)}
+.char-meta{font-size:12.5px;color:var(--dim);line-height:1.85}
+.char-meta span{color:var(--faint)}
+
+.chapter-row{display:flex;align-items:center;gap:11px;background:var(--elev);
+  border:1px solid var(--bd);border-radius:12px;padding:14px 15px;margin-bottom:8px;
+  min-height:56px;transition:transform .1s,border-color .15s}
+.chapter-row:active{transform:scale(.985);border-color:var(--acd)}
+.chapter-num{font-family:var(--serif);font-size:12.5px;color:var(--faint);flex-shrink:0}
+.chapter-name{flex:1;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chapter-st{font-size:10.5px;padding:3px 9px;border-radius:20px;flex-shrink:0}
+.st-done{background:#1a2a1a;color:var(--ok)}
+.st-empty{background:var(--elev2);color:var(--faint)}
+
+.prose{font-family:var(--serif);font-size:16px;line-height:2.05;color:#ddd9d1;
+  letter-spacing:.2px;white-space:pre-wrap;word-break:break-word}
+.prose:empty::before{content:"尚未生成正文，点击上方「生成草稿」开始。";
+  color:var(--faint);font-family:var(--sans);font-size:13px;line-height:1.9}
+
+.review-item{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--bd)}
+.review-item:last-child{border-bottom:none;padding-bottom:0}
+.review-score{font-family:var(--serif);font-size:20px;width:32px;flex-shrink:0;text-align:center}
+.review-dim{font-size:13px;margin-bottom:4px}
+.review-ev{font-size:12px;color:var(--dim);line-height:1.7}
+
+.badge{display:inline-block;font-size:10.5px;padding:3px 10px;border-radius:20px;
+  background:var(--elev2);color:var(--dim);white-space:nowrap}
+.badge-ok{background:#1a2a1a;color:var(--ok)}
+.badge-warn{background:#2e2418;color:var(--ac)}
+
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--acd);
+  border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.empty-state{text-align:center;padding:40px 18px;color:var(--faint);font-size:13px;line-height:1.9}
+
+.toast{position:fixed;left:50%;bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + 22px);
+  transform:translateX(-50%);background:var(--elev2);border:1px solid var(--bd);color:var(--tx);
+  padding:12px 22px;border-radius:24px;font-size:13px;z-index:300;max-width:86vw;text-align:center;
+  box-shadow:0 8px 30px #000a;animation:tin .18s}
+@keyframes tin{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+
+.note{background:var(--acbg);border:1px solid #3a3220;border-radius:10px;padding:11px 13px;
+  font-size:12px;color:var(--ac);line-height:1.75;margin-bottom:13px}
+.note b{color:#e0c890}
+
+/* ========= 平板/桌面微调 ========= */
+@media (min-width:720px){
+  .main{max-width:720px;margin:0 auto;width:100%;padding:26px 28px 40px}
+  .tabbar{max-width:720px;margin:0 auto;width:100%;border-left:1px solid var(--bd);
+    border-right:1px solid var(--bd)}
+  .hdr{max-width:720px;margin:0 auto;width:100%}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+/* ===================== 基础工具 ===================== */
+const R = document.getElementById('root');
+const uid = () => 'i' + Math.random().toString(36).slice(2, 10);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const esc = s => String(s == null ? '' : s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function toast(msg) {
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; }, 1700);
+  setTimeout(() => t.remove(), 2100);
+}
+
+/* ===================== 题材数据 ===================== */
+const G = {
+  xianxia: {
+    label: '仙侠',
+    sur: ['林','萧','顾','叶','沈','陆','楚','江','秦','苏','白','慕','谢'],
+    giv: ['尘','寒','渊','苍','玄','墨','川','衍','烬','雪','璃','霜','瑶','汐','舟','眠'],
+    plc: ['后山禁地','剑冢','藏经阁','寒潭边','古战场遗迹','断崖之上','演武场','山门石阶'],
+    art: ['玄铁剑','养魂玉','清心丹','残缺的古卷','七星铃','定魂钉','一盏青铜灯'],
+    trt: ['沉稳寡言','果决狠厉','外冷内热','重情重义','多疑谨慎','孤傲不群'],
+    gol: ['查明师门灭门真相','夺回被夺走的道基','证明自己配得上那把剑','守护山下那座小城'],
+    atm: ['夜风卷着松涛掠过山脊，远处传来若有若无的钟声','晨雾未散，湿冷的石阶上只有他一个人的脚步声','月光如冷刃劈开云层，照得满谷霜白','雪落了一夜，山道上连一只鸟的痕迹都没有'],
+    act: ['缓缓吐出一口浊气，周身灵力随之流转','将指尖按在剑柄上，感受剑身传来的轻微震颤','闭目凝神，识海中那道裂痕依旧隐隐作痛','顺着石阶一步步走下去，每一步都踩得极稳'],
+    tho: ['他知道，这一趟不会太平。','有些账，迟早要算。','三日之期已到，退路早就没有了。','这世上没有白得的机缘，也没有白受的伤。'],
+    dia: ['你确定要走这条路？','宗门那边，已经有动静了。','东西还在，人就还有机会。','你要找的人，不在山上。','再往前一步，就回不了头了。'],
+    cfl: ['{A}的人已经封了山门，火把在夜色里连成一条赤色的线。','崖下的雾里浮出几道黑影，灵力波动毫不掩饰，是{A}的嫡系。','一封没有落款的信被钉在门柱上，字迹属于{A}。'],
+    hok: ['他抬头望向峰顶，那里有一盏灯，已经亮了很多年。','剑鞘里的东西震了一下，很轻，像是在提醒什么。','门缝里塞着一张纸条，上面只有两个字：别去。']
+  },
+  urban: {
+    label: '都市',
+    sur: ['陈','李','王','周','方','许','梁','宋','程','韩','姜','何'],
+    giv: ['野','川','屿','舟','燃','一','默','深','骁','起','望','归'],
+    plc: ['城中村的天台','凌晨两点的便利店','写字楼三十七层','老城区的面馆','江边的堤岸','地下停车场'],
+    art: ['一部旧手机','一份没寄出的信','半包烟','一串钥匙','账本','一杯凉透的咖啡'],
+    trt: ['沉默倔强','精明世故','嘴硬心软','不合群','死要面子','越挫越勇'],
+    gol: ['把父亲当年的事查清楚','还清那笔不该背的债','在三十岁前活出个人样','护住那间快撑不下去的店'],
+    atm: ['雨下了整夜，霓虹在积水里碎成一地彩色','凌晨的城市像被抽走了声音，只剩空调外机的嗡鸣','天刚蒙蒙亮，早点铺的蒸汽把整条街裹得模糊'],
+    act: ['把烟按灭在栏杆上，看着楼下车流一动不动','又看了一遍手机屏幕，那条消息还是没回','把外套往肩上一搭，转身走进雨里'],
+    tho: ['有些事拖得越久，越不知道怎么开口。','这座城市从不问你来处，只问你还撑不撑得住。','钱的事，说到底是人的事。'],
+    dia: ['这事儿你别掺和。','你欠我一句话，今天得说清楚。','房子我留着，钱我不要。','再给我三天，三天之后我自己走。'],
+    cfl: ['{A}的车停在楼下，一停就是两个小时，谁也没下车。','电话是{A}打来的，只说了一句「东西在我手上」，就挂了。','{A}那边已经把话说死了，这次不留余地。'],
+    hok: ['手机又亮了，这次是个陌生号码，归属地显示在很远的南方。','楼下的车终于开走了，但副驾的车窗一直没关。','他忽然发现，那串钥匙少了一把。']
+  },
+  mystery: {
+    label: '悬疑',
+    sur: ['顾','陆','沈','白','唐','乔','谢','阮','简','闻'],
+    giv: ['深','默','青','砚','寒','知','遥','隐','迟','临','辞','溯'],
+    plc: ['废弃的疗养院','十三号档案室','别墅的地下室','雨夜的旧公寓','停摆多年的钟楼','只剩一盏灯的走廊'],
+    art: ['一本缺页的日记','一枚旧怀表','一张褪色的合影','编号为七的录音带','一把生锈的钥匙'],
+    trt: ['冷静缜密','敏感多疑','不动声色','过度警觉','偏执','善于伪装'],
+    gol: ['找出那晚真正发生了什么','解开父亲留下的谜题','证明那桩旧案另有隐情','找到失踪的证人'],
+    atm: ['走廊尽头的灯忽明忽暗，像是随时会彻底熄灭','雨敲在玻璃上，节奏太规律了，反而不像雨','钟停在三点十七分，落满了灰'],
+    act: ['把录音带放进机器，手指在播放键上停了三秒','蹲下身，用手指抹过地板，指尖沾了一层薄灰','把照片翻到背面，那里有一行褪色的字'],
+    tho: ['有些细节不对，从一开始就不对。','他数过，这栋楼里住着九个人，但每天只有八个人出门。','他忽然意识到，自己也是这桩事里的一环。'],
+    dia: ['你那天晚上，到底在哪儿？','这栋楼里，有人说了谎。','我不信巧合，尤其是在这里。','别碰那扇门。'],
+    cfl: ['{A}出现在档案室门口，手里拿着本不该在那儿的东西。','监控在关键的三分钟里断了，负责人的说法和记录对不上。','那间一直锁着的房间，今天早上开着门。'],
+    hok: ['录音带在最后一分钟里，录下了一个不该出现的声音。','窗外有个人影站了很久，等他拉开窗帘，那里只有一棵树。','钥匙插进锁孔，转了半圈就卡住了。']
+  },
+  scifi: {
+    label: '科幻',
+    sur: ['周','林','洛','时','闻','凌','纪','岑','危','季'],
+    giv: ['舟','眠','序','野','衍','恒','晞','临','溯','零','末','枢'],
+    plc: ['第七区的废弃轨道站','休眠舱区','数据核心层的冷走廊','地表观测台','再生舱外壁','编号为零的实验室'],
+    art: ['一枚数据晶片','半截断掉的身份牌','一台还能开机的旧终端','装有未知样本的容器','一段加密的星图'],
+    trt: ['理性克制','过度冷静','好奇心过盛','不信权威','有强烈的求生欲'],
+    gol: ['弄清自己的记忆被删改了几次','找到那艘失踪的补给船','阻止协议启动','把真相带出这座城'],
+    atm: ['走廊的应急灯每隔三秒闪一次，像是某种倒计时','舷窗外是永恒的暗，偶尔有碎片划过，留下一道极细的光','空气循环的噪音突然停了，安静得能听见自己的心跳'],
+    act: ['把数据晶片插进读卡槽，屏幕上跳出一串他看不懂的坐标','抬起手腕，体表温度比标准值低了零点七度','用指节敲了敲休眠舱的玻璃，里面的人没有反应'],
+    tho: ['如果记忆可以被编辑，那「我」到底还剩下什么。','协议从不说谎，它只是不说全部。','这座城里没有人是无辜的，包括他自己。'],
+    dia: ['你的权限不够。','记录显示你已经死过一次。','我们没时间了，协议已经开始。','那个样本不是地球上的东西。'],
+    cfl: ['警报响起的瞬间，{A}的守卫已经从三个方向封住了通道。','系统将他的权限降到了最低级，{A}的名字出现在冻结名单最上方。','外面的脚步声很规律，是{A}的巡逻队，一共四个人。'],
+    hok: ['晶片里最后一段数据，标注的时间是他出生前的第十年。','终端忽然自己亮起来，屏幕上只有一行字：别信他们。','观测台传回一张图，图上有一个和这座城一模一样的轮廓。']
+  },
+  fantasy: {
+    label: '奇幻',
+    sur: ['艾','洛','瑟','维','伊','卡','奥','芙','雷','格'],
+    giv: ['恩','尔','娅','斯','顿','德','林','娜','里','安','希','薇'],
+    plc: ['银叶森林的边缘','废弃的瞭望塔','旧王城的废墟','地下的矮人酒馆','被诅咒的渡口','龙脊山脉的隘口'],
+    art: ['一枚刻着古语的银币','断了弦的竖琴','一面照不出人影的镜子','装着微光的小瓶','一本用皮绳捆住的册子'],
+    trt: ['谨慎勇敢','天真坚韧','沉默忠厚','狡黠多变','背负誓约','渴望证明自己'],
+    gol: ['找回被夺走的真名','护送那封信到北方','解开身上的诅咒','替被冤枉的族人洗清罪名'],
+    atm: ['林间的光被树冠切成细碎的斑点，落在铺满苔藓的路上','风从山谷里翻上来，带着雪和铁锈混合的气味','月亮是红色的，老人都说这不是好兆头'],
+    act: ['把那枚银币在指间翻了个面，古语的刻痕微微发烫','把斗篷的兜帽拉低，遮住了半张脸','顺着被踩倒的草叶，判断出对方有两个人'],
+    tho: ['有些名字一旦被念出来，就再也收不回去了。','他不知道自己还能走多远，但回头是不可能的。','森林记得所有走进来的人，包括那些再也没走出去的。'],
+    dia: ['你得先告诉我你的真名。','这条路三年前就封了。','北边的信使，已经两个月没来了。','别在月亮变红的时候过桥。'],
+    cfl: ['{A}的旗子已经出现在隘口，来的人不多，但每一个都够他喝一壶。','酒馆的门被推开，{A}的人走进来，所有人都安静了。','消息传得比他快——{A}已经知道那封信在他身上。'],
+    hok: ['那枚银币忽然变得滚烫，烫得他不得不松手。','镜子里什么都没有，但他明明站在镜子前面。','他数了数营地里的火堆，比昨晚多了一处。']
+  }
+};
+
+/* ===================== 状态 ===================== */
+const STORE_KEY = 'moling_mobile_v2';
+const S = {
+  view: 'land',
+  projects: [],
+  active: null,
+  ch: null,
+  cfg: { mode: 'demo', base: 'https://api.openai.com/v1', key: '', model: 'gpt-4o-mini' }
+};
+
+function save() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      projects: S.projects, active: S.active, cfg: S.cfg
+    }));
+  } catch (e) {}
+}
+(function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+    S.projects = d.projects || [];
+    S.active = d.active || null;
+    S.cfg = Object.assign(S.cfg, d.cfg || {});
+  } catch (e) {}
+})();
+const cur = () => S.projects.find(p => p.id === S.active) || null;
+
+/* ===================== 生成引擎 ===================== */
+function makeCast(gk) {
+  const g = G[gk] || G.xianxia;
+  const used = new Set();
+  const name = () => {
+    for (let i = 0; i < 40; i++) {
+      const n = pick(g.sur) + pick(g.giv);
+      if (!used.has(n)) { used.add(n); return n; }
+    }
+    return pick(g.sur) + pick(g.giv) + '之';
+  };
+  return [
+    { role: 'protagonist', label: '主角' },
+    { role: 'ally', label: '盟友' },
+    { role: 'antagonist', label: '对手' },
+    { role: 'mentor', label: '引路人' }
+  ].map(r => ({
+    id: uid(), name: name(), role: r.role, label: r.label,
+    status: 'active', trait: pick(g.trt), goal: pick(g.gol)
+  }));
+}
+
+function makeOutline(gk, n) {
+  const g = G[gk] || G.xianxia;
+  const titles = ['风起','旧约','夜行','断线','来客','暗涌','归途','裂痕','霜降','回声','错位','临界','余烬','孤灯'];
+  const arr = [];
+  for (let i = 1; i <= n; i++) {
+    arr.push({
+      id: uid(), num: i, title: titles[(i - 1) % titles.length],
+      plan: `第${i}章围绕${pick(g.gol)}展开。${pick(g.atm)}，主角在${pick(g.plc)}遭遇新的阻碍，${pick(g.cfl).replace('{A}', '对手')}本章需推进主线并留下悬念。`,
+      text: '', review: null, status: 'empty'
+    });
+  }
+  return arr;
+}
+
+function genText(p, ch) {
+  const g = G[p.genre] || G.xianxia;
+  const cast = p.bible.cast;
+  const A = cast.find(c => c.role === 'protagonist') || cast[0];
+  const B = cast.find(c => c.role === 'ally') || cast[1] || cast[0];
+  const C = cast.find(c => c.role === 'antagonist') || cast[2] || cast[1] || cast[0];
+  const d1 = pick(g.dia);
+  const d2 = pick(g.dia.filter(x => x !== d1));
+  return [
+    `${pick(g.atm)}。${A.name}独自${pick(['立在','站在','坐在','行至'])}${pick(g.plc)}，${pick(g.act)}。`,
+    `${pick(g.tho)}他伸手摸到${pick(g.art)}，${pick(['指尖停了一瞬','又缓缓收了回来','却始终没有握紧'])}。`,
+    `${B.name}走近时，脚步声在空旷里格外清晰。\n\n「${d1}」\n\n${A.name}${pick(['没有回头','侧过脸','顿了顿'])}。\n\n「${d2}」`,
+    pick(g.cfl).replace('{A}', C.name),
+    pick(g.hok)
+  ].join('\n\n');
+}
+
+function makeReview() {
+  const dims = [
+    ['setting', '设定一致性'], ['character', '人物行为'],
+    ['pacing', '节奏'], ['hook', '伏笔处理'], ['prose', '文笔']
+  ];
+  const items = dims.map(([k, l]) => {
+    const s = 6 + Math.floor(Math.random() * 4);
+    return {
+      k, l, s,
+      e: s >= 8
+        ? '符合本章计划，未发现与故事圣经冲突之处。'
+        : '存在可优化空间：部分描述与人物既有设定略有偏差，建议复核。'
+    };
+  });
+  const avg = items.reduce((a, x) => a + x.s, 0) / items.length;
+  return { items, avg: Math.round(avg * 10) / 10, ok: avg >= 7.5 };
+}
+
+/* ===================== 真实 API 调用 ===================== */
+async function liveGen(p, ch, onDelta) {
+  const c = S.cfg;
+  if (!c.key) throw new Error('尚未配置 API Key，请到「设置」里填写');
+
+  const castLines = p.bible.cast.map(x =>
+    `- ${x.name}（${x.label}，${x.trait}，目标：${x.goal}，状态：${x.status}）`
+  ).join('\n');
+
+  const sys = `你是中文小说写作助手，为《${p.title}》写第${ch.num}章。
+题材：${G[p.genre]?.label || p.genre}
+设定：${p.pitch}
+
+【人物】
+${castLines}
+
+【硬约束】
+- 已死亡角色不得出场
+- 不得让角色知道信息边界外的事
+- 字数 1500–2200
+- 结尾落在未解决的张力上
+
+【本章计划】
+${ch.plan || '（无）'}
+
+直接输出正文，不要标题和解释。`;
+
+  const hosted = /^https?:$/.test(location.protocol);
+  const url = hosted ? '/api/chat' : c.base.replace(/\/$/, '') + '/chat/completions';
+  const body = hosted
+    ? { apiBase: c.base, apiKey: c.key, model: c.model,
+        messages: [{ role: 'system', content: sys }, { role: 'user', content: '开始写。' }] }
+    : { model: c.model, stream: true, temperature: 0.85,
+        messages: [{ role: 'system', content: sys }, { role: 'user', content: '开始写。' }] };
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`接口返回 ${res.status}`);
+
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '', full = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const lines = buf.split('\n');
+    buf = lines.pop();
+    for (const line of lines) {
+      const t = line.trim();
+      if (!t.startsWith('data:')) continue;
+      const payload = t.slice(5).trim();
+      if (payload === '[DONE]') continue;
+      try {
+        const j = JSON.parse(payload);
+        const d = j.choices?.[0]?.delta?.content || '';
+        if (d) { full += d; onDelta(d, full); }
+      } catch (e) {}
+    }
+  }
+  return full;
+}
+
+/* ===================== 启动页 ===================== */
+function renderLanding() {
+  R.innerHTML = `
+    <div id="land">
+      <div class="land-title">墨灵</div>
+      <div class="land-sub">AI 长篇小说工作台</div>
+      <button class="land-btn" id="enterBtn">开 始 创 作</button>
+      <div class="land-tip">本地演示模式 · 无需注册<br>作品数据保存在你的手机里</div>
+    </div>`;
+  document.getElementById('enterBtn').onclick = enterApp;
+}
+
+function enterApp() {
+  if (S.projects.length === 0) {
+    const gk = 'xianxia';
+    S.projects.push({
+      id: uid(),
+      title: '雾锁青峰',
+      genre: gk,
+      pitch: '一个被逐出师门的剑修，为查明师门灭门真相重回故地。',
+      bible: {
+        cast: makeCast(gk),
+        world: '青云宗曾为北境第一剑宗，三年前一夜覆灭。'
+      },
+      chapters: makeOutline(gk, 8)
+    });
+    S.active = S.projects[0].id;
+    save();
+  } else if (!S.active) {
+    S.active = S.projects[0].id;
+  }
+  S.view = 'dash';
+  render();
+}
+
+/* ===================== 应用外壳 ===================== */
+function render() {
+  if (S.view === 'land') { renderLanding(); return; }
+  const p = cur();
+  if (!p) { S.view = 'land'; renderLanding(); return; }
+
+  const reader = S.view === 'chapter';
+  const chObj = p.chapters.find(c => c.id === S.ch);
+  const headerTitle = reader ? `第${chObj ? chObj.num : ''}章` : p.title;
+
+  const tabs = [
+    ['dash', '工作台', '◈'],
+    ['bible', '圣经', '❖'],
+    ['chapters', '章节', '▤'],
+    ['cfg', '设置', '⚙']
+  ];
+
+  R.innerHTML = `
+    <div id="shell" class="${reader ? 'reader' : ''}">
+      <header class="hdr">
+        ${reader ? '<button class="h-back" id="backBtn">‹</button>' : ''}
+        <div class="brand">墨灵</div>
+        <div class="h-title">${esc(headerTitle)}</div>
+      </header>
+      <main class="main" id="main"></main>
+      <nav class="tabbar">
+        ${tabs.map(([v, l, i]) => `
+          <button class="tab ${!reader && S.view === v ? 'on' : ''}" data-nav="${v}">
+            <span class="ti">${i}</span><span>${l}</span>
+          </button>`).join('')}
+      </nav>
+    </div>`;
+
+  document.querySelectorAll('[data-nav]').forEach(btn => {
+    btn.onclick = () => {
+      S.view = btn.dataset.nav;
+      S.ch = null;
+      render();
+    };
+  });
+  const back = document.getElementById('backBtn');
+  if (back) back.onclick = () => { S.view = 'chapters'; render(); };
+
+  paintMain(p);
+}
+
+function paintMain(p) {
+  const m = document.getElementById('main');
+  if (!m) return;
+  if (S.view === 'dash')     m.innerHTML = viewDash(p);
+  if (S.view === 'bible')    m.innerHTML = viewBible(p);
+  if (S.view === 'chapters') m.innerHTML = viewChapters(p);
+  if (S.view === 'chapter')  m.innerHTML = viewChapter(p);
+  if (S.view === 'cfg')      m.innerHTML = viewCfg();
+  bindEvents(p);
+}
+
+/* ===================== 视图：工作台 ===================== */
+function viewDash(p) {
+  const done = p.chapters.filter(c => c.status === 'done').length;
+  const words = p.chapters.reduce((a, c) => a + (c.text ? c.text.replace(/\s/g, '').length : 0), 0);
+  const next = p.chapters.find(c => c.status !== 'done');
+
+  return `
+    <div class="v-head">
+      <div class="v-title">${esc(p.title)}</div>
+      <div class="v-desc">${esc(p.pitch)}</div>
+    </div>
+
+    <div class="grid2">
+      <div class="stat"><div class="stat-num">${p.chapters.length}</div><div class="stat-label">规划章节</div></div>
+      <div class="stat"><div class="stat-num">${done}</div><div class="stat-label">已完成</div></div>
+      <div class="stat"><div class="stat-num">${words}</div><div class="stat-label">累计字数</div></div>
+      <div class="stat"><div class="stat-num">${p.bible.cast.length}</div><div class="stat-label">登记人物</div></div>
+    </div>
+
+    ${next
+      ? `<button class="btn btn-p btn-b" id="quickWrite">继续写第${next.num}章</button>`
+      : `<div class="card"><div class="empty-state">全部章节已完成</div></div>`}
+
+    <div class="card" style="margin-top:14px">
+      <div class="card-title">人物速览</div>
+      ${p.bible.cast.map(c => `
+        <div class="char-card">
+          <div class="char-head">
+            <span class="char-name">${esc(c.name)}</span>
+            <span class="char-role ${c.role}">${esc(c.label)}</span>
+          </div>
+          <div class="char-meta">性格：<span>${esc(c.trait)}</span><br>目标：<span>${esc(c.goal)}</span></div>
+        </div>`).join('')}
+    </div>`;
+}
+
+/* ===================== 视图：故事圣经 ===================== */
+function viewBible(p) {
+  return `
+    <div class="v-head">
+      <div class="v-title">故事圣经</div>
+      <div class="v-desc">这里的事实是生成时的一致性真相源，改完即刻生效。</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">作品信息</div>
+      <div class="field"><label>书名</label><input id="bTitle" value="${esc(p.title)}"></div>
+      <div class="field"><label>一句话设定</label><textarea id="bPitch" rows="2">${esc(p.pitch)}</textarea></div>
+      <div class="field"><label>世界观摘要</label><textarea id="bWorld" rows="3">${esc(p.bible.world || '')}</textarea></div>
+      <button class="btn btn-p btn-b" id="saveInfo">保存作品信息</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">人物台账</div>
+      ${p.bible.cast.map(c => `
+        <div class="char-card">
+          <div class="char-head">
+            <span class="char-name">${esc(c.name)}</span>
+            <span class="char-role ${c.role}">${esc(c.label)}</span>
+          </div>
+          <div class="field"><label>性格</label><input data-trait="${c.id}" value="${esc(c.trait)}"></div>
+          <div class="field"><label>目标</label><input data-goal="${c.id}" value="${esc(c.goal)}"></div>
+          <div class="field"><label>状态</label>
+            <select data-status="${c.id}">
+              <option value="active" ${c.status === 'active' ? 'selected' : ''}>存活</option>
+              <option value="dead" ${c.status === 'dead' ? 'selected' : ''}>已死亡</option>
+              <option value="missing" ${c.status === 'missing' ? 'selected' : ''}>失踪</option>
+            </select>
+          </div>
+        </div>`).join('')}
+      <button class="btn btn-p btn-b" id="saveCast">保存人物</button>
+    </div>`;
+}
+
+/* ===================== 视图：章节列表 ===================== */
+function viewChapters(p) {
+  return `
+    <div class="v-head">
+      <div class="v-title">章节</div>
+      <div class="v-desc">共 ${p.chapters.length} 章 · 点击进入工作台</div>
+    </div>
+    ${p.chapters.map(c => `
+      <div class="chapter-row" data-open="${c.id}">
+        <span class="chapter-num">第${c.num}章</span>
+        <span class="chapter-name">${esc(c.title)}</span>
+        <span class="chapter-st ${c.status === 'done' ? 'st-done' : 'st-empty'}">
+          ${c.status === 'done' ? c.text.replace(/\s/g, '').length + '字' : '待写'}
+        </span>
+      </div>`).join('')}
+    <button class="btn btn-b" id="addCh" style="margin-top:12px">+ 增加 3 章</button>`;
+}
+
+/* ===================== 视图：章节工作台 ===================== */
+function viewChapter(p) {
+  const c = p.chapters.find(x => x.id === S.ch) || p.chapters[0];
+  if (!c) return '<div class="empty-state">没有章节</div>';
+  S.ch = c.id;
+
+  const reviewHtml = c.review
+    ? c.review.items.map(it => `
+        <div class="review-item">
+          <div class="review-score" style="color:${it.s >= 8 ? 'var(--ok)' : it.s >= 7 ? 'var(--ac)' : 'var(--danger)'}">${it.s}</div>
+          <div>
+            <div class="review-dim">${esc(it.l)}</div>
+            <div class="review-ev">${esc(it.e)}</div>
+          </div>
+        </div>`).join('')
+    : '<div class="empty-state">尚未评审</div>';
+
+  return `
+    <div class="v-head">
+      <div class="v-title">第${c.num}章 · ${esc(c.title)}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">章节计划</div>
+      <textarea id="planBox" rows="4">${esc(c.plan || '')}</textarea>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>正文</span>
+        <span class="badge">${c.text ? c.text.replace(/\s/g, '').length + ' 字' : ''}</span>
+      </div>
+      <div class="btn-row" style="margin-top:0;margin-bottom:15px">
+        <button class="btn btn-p" id="genBtn">${c.text ? '重新生成' : '生成草稿'}</button>
+        <button class="btn" id="reviewBtn" ${c.text ? '' : 'disabled'}>评审</button>
+      </div>
+      <div class="prose" id="proseBox">${esc(c.text || '')}</div>
+      ${c.text ? `<button class="btn btn-b" id="exportBtn" style="margin-top:15px">导出 / 分享本章</button>` : ''}
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>一致性评审</span>
+        ${c.review ? `<span class="badge ${c.review.ok ? 'badge-ok' : 'badge-warn'}">${c.review.avg} / 10</span>` : ''}
+      </div>
+      ${reviewHtml}
+    </div>`;
+}
+
+/* ===================== 视图：设置 ===================== */
+function viewCfg() {
+  const c = S.cfg;
+  return `
+    <div class="v-head">
+      <div class="v-title">设置</div>
+      <div class="v-desc">演示模式无需任何配置；API 模式会调用你填写的模型服务。</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">生成模式</div>
+      <div class="field">
+        <label>模式</label>
+        <select id="cfgMode">
+          <option value="demo" ${c.mode === 'demo' ? 'selected' : ''}>演示模式（本地模拟，无需 Key）</option>
+          <option value="live" ${c.mode === 'live' ? 'selected' : ''}>API 模式（真实模型）</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">API 配置</div>
+      <div class="field"><label>接口地址</label><input id="cfgBase" value="${esc(c.base)}" placeholder="https://api.openai.com/v1"></div>
+      <div class="field"><label>API Key</label><input id="cfgKey" type="password" value="${esc(c.key)}" placeholder="sk-..."></div>
+      <div class="field"><label>模型名称</label><input id="cfgModel" value="${esc(c.model)}" placeholder="gpt-4o-mini"></div>
+      <div class="note"><b>提示：</b>演示模式已包含全部功能，不需要填写这里。要用真实模型时，公网部署需要配合 <code>/api/chat</code> 代理绕过浏览器跨域限制。</div>
+      <button class="btn btn-p btn-b" id="saveCfg">保存设置</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">数据</div>
+      <button class="btn btn-b btn-danger" id="resetAll">清空全部数据</button>
+    </div>`;
+}
+
+/* ===================== 事件绑定 ===================== */
+function bindEvents(p) {
+  const m = document.getElementById('main');
+  if (!m) return;
+  const q = s => m.querySelector(s);
+
+  const qw = q('#quickWrite');
+  if (qw) qw.onclick = () => {
+    const n = p.chapters.find(c => c.status !== 'done');
+    if (n) { S.ch = n.id; S.view = 'chapter'; render(); }
+  };
+
+  m.querySelectorAll('[data-open]').forEach(el => {
+    el.onclick = () => { S.ch = el.dataset.open; S.view = 'chapter'; render(); };
+  });
+
+  const addCh = q('#addCh');
+  if (addCh) addCh.onclick = () => {
+    const start = p.chapters.length + 1;
+    p.chapters.push(...makeOutline(p.genre, 3).map((c, i) => ({ ...c, num: start + i })));
+    save(); toast('已增加 3 章'); render();
+  };
+
+  const saveInfo = q('#saveInfo');
+  if (saveInfo) saveInfo.onclick = () => {
+    p.title = q('#bTitle').value.trim() || p.title;
+    p.pitch = q('#bPitch').value.trim();
+    p.bible.world = q('#bWorld').value.trim();
+    save(); toast('作品信息已保存'); render();
+  };
+
+  const saveCast = q('#saveCast');
+  if (saveCast) saveCast.onclick = () => {
+    p.bible.cast.forEach(c => {
+      const t = q(`[data-trait="${c.id}"]`);
+      const g = q(`[data-goal="${c.id}"]`);
+      const s = q(`[data-status="${c.id}"]`);
+      if (t) c.trait = t.value.trim();
+      if (g) c.goal = g.value.trim();
+      if (s) c.status = s.value;
+    });
+    save(); toast('人物台账已保存'); render();
+  };
+
+  const planBox = q('#planBox');
+  if (planBox) planBox.oninput = () => {
+    const c = p.chapters.find(x => x.id === S.ch);
+    if (c) { c.plan = planBox.value; save(); }
+  };
+
+  const genBtn = q('#genBtn');
+  if (genBtn) genBtn.onclick = () => doGenerate(p);
+
+  const reviewBtn = q('#reviewBtn');
+  if (reviewBtn) reviewBtn.onclick = () => doReview(p);
+
+  const exportBtn = q('#exportBtn');
+  if (exportBtn) exportBtn.onclick = () => doExport(p);
+
+  const saveCfg = q('#saveCfg');
+  if (saveCfg) saveCfg.onclick = () => {
+    S.cfg.mode = q('#cfgMode').value;
+    S.cfg.base = q('#cfgBase').value.trim();
+    S.cfg.key = q('#cfgKey').value.trim();
+    S.cfg.model = q('#cfgModel').value.trim();
+    save(); toast('设置已保存');
+  };
+
+  const resetAll = q('#resetAll');
+  if (resetAll) resetAll.onclick = () => {
+    if (!confirm('将清空所有作品与设置，确定继续？')) return;
+    localStorage.removeItem(STORE_KEY);
+    S.projects = []; S.active = null; S.view = 'land';
+    render();
+  };
+}
+
+/* ===================== 动作：生成 ===================== */
+async function doGenerate(p) {
+  const c = p.chapters.find(x => x.id === S.ch);
+  if (!c) return;
+  const btn = document.getElementById('genBtn');
+  const box = document.getElementById('proseBox');
+  if (!btn || !box) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>生成中';
+  c.review = null;
+
+  try {
+    if (S.cfg.mode === 'live') {
+      box.textContent = '';
+      const full = await liveGen(p, c, (d, acc) => { box.textContent = acc; });
+      c.text = full.trim();
+    } else {
+      box.textContent = '';
+      const text = genText(p, c);
+      for (let i = 0; i < text.length; i += 10) {
+        box.textContent = text.slice(0, i + 10);
+        await sleep(14);
+      }
+      c.text = text;
+    }
+    c.status = 'done';
+    save();
+    toast('草稿已生成');
+  } catch (err) {
+    console.error(err);
+    toast('生成失败：' + err.message);
+  } finally {
+    render();
+  }
+}
+
+/* ===================== 动作：评审 ===================== */
+function doReview(p) {
+  const c = p.chapters.find(x => x.id === S.ch);
+  if (!c || !c.text) return;
+
+  const dead = p.bible.cast.filter(x => x.status === 'dead').map(x => x.name);
+  const bad = dead.filter(n => n && c.text.includes(n));
+
+  const r = makeReview();
+  if (bad.length) {
+    r.items.unshift({
+      k: 'hard', l: '硬性一致性检查', s: 2,
+      e: `已死亡角色出现在正文中：${bad.join('、')}。必须修正。`
+    });
+    r.avg = Math.round(r.items.reduce((a, x) => a + x.s, 0) / r.items.length * 10) / 10;
+    r.ok = false;
+  }
+  c.review = r;
+  save();
+  toast(bad.length ? '发现硬性冲突' : '评审完成');
+  render();
+}
+
+/* ===================== 动作：导出 ===================== */
+async function doExport(p) {
+  const c = p.chapters.find(x => x.id === S.ch);
+  if (!c || !c.text) return;
+
+  const txt =
+    `《${p.title}》\n\n第${c.num}章　${c.title}\n\n${c.text}\n\n` +
+    `——\n本作品在「墨灵」中创作，包含 AI 辅助生成内容。\n`;
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: `${p.title} 第${c.num}章`, text: txt });
+      return;
+    } catch (e) {}
+  }
+
+  const url = URL.createObjectURL(new Blob([txt], { type: 'text/plain;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${p.title}_第${c.num}章.txt`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+  toast('已导出');
+}
+
+/* ===================== 启动 ===================== */
+render();
+</script>
+</body>
+</html>
